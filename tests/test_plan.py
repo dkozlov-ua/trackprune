@@ -103,16 +103,27 @@ def test_missing_native_audio_is_an_error():
     assert not p.ok and "no audio track matches" in p.errors[0]
 
 
-def test_commentary_kept_but_not_default():
+def test_commentary_dropped_and_description_kept_but_not_default():
     tracks = [
         T(0, "video", "en"),
         T(1, "audio", "en", "Director's Commentary", default=True),
-        T(2, "audio", "en", "Main"),
-        T(3, "audio", "en", "Audio Description"),
+        T(2, "audio", "en", "Audio Description"),
+        T(3, "audio", "en", "Main"),
+        T(4, "audio", "en", commentary=True),
+        T(5, "subtitles", "en", "English"),
+        T(6, "subtitles", "en", "Commentary by the director"),
     ]
     p = make_plan(tracks, LANGS, "en", ["en"])
-    assert [t.id for t in p.kept] == [0, 1, 2, 3]
-    assert [i for i, a in p.actions.items() if a.default] == [2]
+    assert [t.id for t in p.kept] == [0, 2, 3, 5]
+    assert [i for i, a in p.actions.items() if a.default] == [3]
+
+
+def test_only_commentary_in_language_is_an_error_but_ids_can_keep_it():
+    tracks = [T(0, "video", "en"), T(1, "audio", "ru"), T(2, "audio", "en", "Commentary")]
+    p = make_plan(tracks, LANGS, "en", ["en"])
+    assert not p.ok and "except commentary" in p.errors[0]
+    p = make_plan(tracks, LANGS, None, ["en"], audio_ids=[2])
+    assert p.ok and [t.id for t in p.kept] == [0, 2]
 
 
 def test_explicit_ids_override_language():

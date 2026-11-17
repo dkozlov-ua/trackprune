@@ -3,9 +3,10 @@
 Policy
 ------
 * Video (and any other non-audio, non-subtitle track) is kept untouched.
-* Audio: keep the tracks in the original language (or the explicit `audio_ids`), drop the
-  rest. One kept track becomes the default -- the first that is not commentary or an audio
-  description, unless `default_audio_id` says otherwise.
+* Commentary tracks (audio and subtitles) are dropped, whatever their language.
+* Audio: keep the tracks in the original language (or exactly the explicit `audio_ids`, which
+  may include commentary), drop the rest. One kept track becomes the default -- the first that
+  is not an audio description, unless `default_audio_id` says otherwise.
 * Subtitles: keep the tracks in `sub_langs` (English by default), drop the rest.
   - If the kept audio is in a language the viewer reads (one of `sub_langs`), no full
     subtitle track is default; a forced track, if any, becomes forced + default so
@@ -171,12 +172,17 @@ def make_plan(
             plan.errors.append(f"--audio-ids {unknown}: no such audio track")
         kept_audio = [t for t in audio if t.id in audio_ids]
     else:
-        kept_audio = [t for t in audio if t.lang == audio_key]
+        kept_audio = [t for t in audio if t.lang == audio_key and not t.is_commentary]
 
     if audio and not kept_audio:
         present = ", ".join(sorted({t.lang_raw for t in audio}))
         want = audio_lang if audio_ids is None else f"ids {audio_ids}"
-        plan.errors.append(f"no audio track matches {want} (file has: {present})")
+        only_commentary = audio_ids is None and any(t.lang == audio_key for t in audio)
+        plan.errors.append(
+            f"no audio track matches {want}"
+            + (" except commentary" if only_commentary else "")
+            + f" (file has: {present})"
+        )
 
     if default_audio_id is not None:
         chosen = next((t for t in kept_audio if t.id == default_audio_id), None)
@@ -198,7 +204,7 @@ def make_plan(
 
     # --- subtitles ----------------------------------------------------------------------
     subs = [t for t in tracks if t.type == "subtitles"]
-    kept_subs = [t for t in subs if t.lang in sub_keys]
+    kept_subs = [t for t in subs if t.lang in sub_keys and not t.is_commentary]
     understood = chosen is not None and chosen.lang in sub_keys
 
     default_sub: Track | None = None

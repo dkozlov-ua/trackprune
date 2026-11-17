@@ -59,8 +59,10 @@ Existing files in `--out` are not overwritten without `--overwrite`.
 
 ### The rules
 
+**Commentary.** Commentary tracks, audio and subtitles, are dropped in every language.
+
 **Audio.** Tracks in the `--audio` language are kept; all others are dropped. One kept track
-becomes the default: the first that is not a commentary or audio description.
+becomes the default: the first that is not an audio description.
 
 **Subtitles.** Tracks in the `--subs` languages are kept; all others are dropped. Then:
 
@@ -77,7 +79,7 @@ releases often only name them, by their track names.
 
 | option | use |
 |---|---|
-| `--audio-ids 1,4` | Keep exactly these audio tracks (mislabelled or `und` languages). |
+| `--audio-ids 1,4` | Keep exactly these audio tracks (mislabelled or `und` languages; may include commentary). |
 | `--default-audio ID` | Pick the default audio track yourself. |
 | `--default-sub ID` | Pick the default subtitle track yourself. |
 | `--subs eng --subs ukr` | Keep subtitles in several languages. |
